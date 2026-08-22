@@ -1,0 +1,10 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Receipts uploaded from the app live under receipts/{ownerId}/...
+    match /receipts/{ownerId}/{file=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -39,3 +39,23 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local env (keep .env.example)
+.env
+.env.local
+.env.*.local
+
+# service accounts / credentials
+serviceAccountKey.json
+credentials.json
+*-credentials.json
+google-services.json
+GoogleService-Info.json
+
+# expo generated
+expo-env.d.ts
+
+# secrets
+*.keystore
+*.key
+secrets/

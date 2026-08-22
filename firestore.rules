@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // No-auth single-owner app. Owner id is "default-owner" (see src/lib/firebase.ts).
+    // WARNING: `if true` is fully open. Add Firebase Auth + `request.auth != null`
+    // before shipping anything shareable.
+    match /owners/{ownerId}/transactions/{txId} {
+      allow read, write: if true;
+    }
+    match /owners/{ownerId}/reports/{reportId} {
+      allow read, write: if true;
+    }
+  }
+}

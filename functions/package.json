@@ -1,0 +1,25 @@
+{
+  "name": "sana-printers-functions",
+  "version": "1.0.0",
+  "description": "Sana Printers serverless functions: server-side PDF report generation.",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0",
+    "pdfkit": "^0.15.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "@types/pdfkit": "^0.13.5"
+  }
+}
