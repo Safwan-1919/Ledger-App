@@ -24,6 +24,12 @@ export function AccountScreen({ type }: { type: TxType }) {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (items.length === 0) {
+      syncNow().catch(() => undefined);
+    }
+  }, []);
+
   const filtered = useMemo(() => {
     return items
       .filter((t) => t.type === type)

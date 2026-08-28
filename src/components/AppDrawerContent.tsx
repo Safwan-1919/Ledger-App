@@ -15,15 +15,18 @@ const ITEMS = [
   { name: 'yearly', label: 'Yearly Report', icon: 'calendar' as const },
   { name: 'accounts', label: 'Accounts', icon: 'book' as const },
   { name: 'history', label: 'History', icon: 'clock' as const },
+  { name: 'close-account', label: 'Close Account', icon: 'power' as const },
 ];
 
 export function AppDrawerContent(props: DrawerContentComponentProps) {
   const items = useTransactionsStore((s) => s.items);
   const currency = useSettingsStore((s) => s.currency);
 
+  const carryForward = useSettingsStore((s) => s.carryForward);
+
   const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
   const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-  const balance = income - expense;
+  const balance = carryForward + income - expense;
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={drawerScroll}>

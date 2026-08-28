@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -31,6 +31,7 @@ export default function NewTransaction() {
           router.replace('/accounts');
         }
       },
+      onError: (e) => Alert.alert('Error', (e as Error).message),
     });
   };
 

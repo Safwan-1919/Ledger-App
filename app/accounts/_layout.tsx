@@ -14,9 +14,9 @@ export default function AccountsLayout() {
           backgroundColor: colors.black,
           borderTopColor: colors.black,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 24,
-          paddingTop: 10,
+          height: 60,
+          paddingBottom: 10,
+          paddingTop: 6,
         },
         tabBarLabelStyle: { fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 11 },
       }}

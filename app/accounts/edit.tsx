@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
 import { Screen, T, Row } from '@/components/ui';
 import { colors, spacing } from '@/theme/tokens';
 import { TransactionForm } from '@/components/TransactionForm';
@@ -33,6 +32,7 @@ export default function EditTransaction() {
           router.replace('/accounts');
         }
       },
+      onError: (e) => Alert.alert('Error', (e as Error).message),
     });
   };
 

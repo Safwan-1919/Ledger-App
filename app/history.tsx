@@ -13,9 +13,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { formatCurrency } from '@/lib/format';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function HistoryScreen() {
   const qc = useQueryClient();
+  const currency = useSettingsStore((s) => s.currency);
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
@@ -73,6 +76,7 @@ export default function HistoryScreen() {
 
   const monthly = reports.data?.filter((r) => r.type === 'monthly') ?? [];
   const yearly = reports.data?.filter((r) => r.type === 'yearly') ?? [];
+  const closed = reports.data?.filter((r) => r.type === 'close-account') ?? [];
 
   return (
     <View style={{ gap: spacing.lg }}>
@@ -143,6 +147,46 @@ export default function HistoryScreen() {
                   <T variant="micro">
                     {new Date(r.generatedAt).toLocaleDateString()}
                   </T>
+                </View>
+                <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                  <Feather
+                    name="download"
+                    size={20}
+                    color={colors.black}
+                    onPress={() => downloadReport.mutate(r)}
+                  />
+                  <Feather
+                    name="trash-2"
+                    size={20}
+                    color={colors.black}
+                    onPress={() => {
+                      Alert.alert('Delete', `Delete ${r.label}?`, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Delete', style: 'destructive', onPress: () => removeReport.mutate(r.id) },
+                      ]);
+                    }}
+                  />
+                </View>
+              </View>
+            </Card>
+          ))}
+        </View>
+      )}
+
+      {closed.length > 0 && (
+        <View>
+          <T variant="h3" style={{ marginBottom: spacing.md, paddingLeft: spacing.md }}>Close Account Reports</T>
+          {closed.map((r) => (
+            <Card key={r.id} style={{ marginBottom: spacing.sm }}>
+              <View style={reportRow}>
+                <View style={{ flex: 1 }}>
+                  <T variant="body" style={{ fontWeight: '700' }}>{r.label}</T>
+                  <T variant="micro">
+                    {new Date(r.generatedAt).toLocaleDateString()}
+                  </T>
+                  {r.carryForward != null && (
+                    <T variant="micro">Carry forward: {formatCurrency(r.carryForward, currency)}</T>
+                  )}
                 </View>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                   <Feather

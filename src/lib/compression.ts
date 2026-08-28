@@ -46,18 +46,21 @@ export async function compressReceipt(sourceUri: string, maxDim = 1280): Promise
     if (isJpeg(bytes)) {
       const decoded = jpegJs.decode(bytes, { useTArray: true });
       const resized = resizeRGBA(decoded.data, decoded.width, decoded.height, maxDim);
-      const png = UPNG.encode([resized.data.buffer as ArrayBuffer], resized.width, resized.height, 8);
+      const buf = resized.data.buffer.slice(resized.data.byteOffset, resized.data.byteOffset + resized.data.byteLength);
+      const png = UPNG.encode([buf as ArrayBuffer], resized.width, resized.height, 8);
       const b64 = uint8ToBase64(new Uint8Array(png));
       return `data:image/png;base64,${b64}`;
     }
 
     if (isPng(bytes)) {
-      const decoded = UPNG.decode(bytes.buffer as ArrayBuffer);
+      const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      const decoded = UPNG.decode(buf as ArrayBuffer);
       const rgba = UPNG.toRGBA8(decoded);
       if (rgba.length > 0 && rgba[0]) {
         const imageData = new Uint8Array(rgba[0] as ArrayBuffer);
         const resized = resizeRGBA(imageData, decoded.width, decoded.height, maxDim);
-        const png = UPNG.encode([resized.data.buffer as ArrayBuffer], resized.width, resized.height, 8);
+        const rbuf = resized.data.buffer.slice(resized.data.byteOffset, resized.data.byteOffset + resized.data.byteLength);
+        const png = UPNG.encode([rbuf as ArrayBuffer], resized.width, resized.height, 8);
         const b64 = uint8ToBase64(new Uint8Array(png));
         return `data:image/png;base64,${b64}`;
       }

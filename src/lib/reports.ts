@@ -1,15 +1,16 @@
 import { getFirebase, isFirebaseConfigured, OWNER_ID } from '@/lib/firebase';
 import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
-import { generateMonthPdf, generateYearPdf } from '@/lib/pdf';
+import { generateMonthPdf, generateYearPdf, generateCloseAccountPdf } from '@/lib/pdf';
 import { getTransactions } from '@/store/useTransactionsStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
 export interface StoredReport {
   id: string;
-  type: 'monthly' | 'yearly';
+  type: 'monthly' | 'yearly' | 'close-account';
   label: string;
   base64: string;
   generatedAt: number;
+  carryForward?: number;
 }
 
 function monthId(year: number, month: number): string {
@@ -117,4 +118,34 @@ export async function deleteStoredReport(id: string): Promise<void> {
   const { db } = getFirebase();
   if (!db) return;
   await deleteDoc(doc(db, 'owners', OWNER_ID, 'reports', id));
+}
+
+export async function storeCloseAccountReport(
+  items: ReturnType<typeof getTransactions>,
+  carryForward: number,
+): Promise<string> {
+  if (!isFirebaseConfigured()) throw new Error('Firebase not configured');
+  const { db } = getFirebase();
+  if (!db) throw new Error('Firestore not available');
+
+  const currency = useSettingsStore.getState().currency;
+  const base64 = await generateCloseAccountPdf(items, currency, carryForward);
+  const id = `close-account-${Date.now()}`;
+  const now = new Date();
+  const label = `Close Account (${now.toLocaleDateString()})`;
+
+  const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+  const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+  const newCarryForward = carryForward + income - expense;
+
+  await setDoc(doc(db, 'owners', OWNER_ID, 'reports', id), {
+    id,
+    type: 'close-account',
+    label,
+    base64,
+    generatedAt: Date.now(),
+    carryForward: newCarryForward,
+  });
+
+  return id;
 }

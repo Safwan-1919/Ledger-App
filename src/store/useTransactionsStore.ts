@@ -15,7 +15,7 @@ interface TransactionsState {
   addTransaction: (input: TransactionInput) => Transaction;
   updateTransaction: (id: string, patch: Partial<TransactionInput>) => void;
   removeTransaction: (id: string) => void;
-  clearAll: () => void;
+  clearAll: () => Promise<void>;
   /** Test/reseed helper kept internal. */
   replaceAll: (items: Transaction[]) => void;
 }
@@ -27,6 +27,17 @@ function notifySync() {
     .catch((e) => console.warn('[sync] notifySync error:', e));
 }
 
+let _hydrated = false;
+let _onHydrate: (() => void) | null = null;
+
+export const hydrated = new Promise<void>((resolve) => {
+  _onHydrate = () => { _hydrated = true; resolve(); };
+});
+
+export function isStoreHydrated(): boolean {
+  return _hydrated;
+}
+
 export const useTransactionsStore = create<TransactionsState>()(
   persist(
     (set, get) => ({
@@ -34,10 +45,12 @@ export const useTransactionsStore = create<TransactionsState>()(
 
       addTransaction: (input) => {
         const now = Date.now();
+        const absAmount = Math.abs(input.amount);
+        const safeAmount = Number.isFinite(absAmount) && absAmount > 0 ? absAmount : 0;
         const tx: Transaction = {
           id: genId(),
           type: input.type,
-          amount: Math.abs(input.amount),
+          amount: safeAmount,
           reason: input.reason.trim(),
           date: input.date,
           note: input.note?.trim() || undefined,
@@ -57,7 +70,9 @@ export const useTransactionsStore = create<TransactionsState>()(
               ? {
                   ...t,
                   ...patch,
-                  amount: patch.amount != null ? Math.abs(patch.amount) : t.amount,
+                  amount: patch.amount != null
+                    ? (() => { const a = Math.abs(patch.amount); return Number.isFinite(a) && a > 0 ? a : t.amount; })()
+                    : t.amount,
                   updatedAt: Date.now(),
                 }
               : t
@@ -73,8 +88,13 @@ export const useTransactionsStore = create<TransactionsState>()(
           .catch((e) => console.warn('[sync] delete sync error:', e));
       },
 
-      clearAll: () => {
+      clearAll: async () => {
+        const currentIds = get().items.map((t) => t.id);
         set({ items: [] });
+        if (currentIds.length > 0) {
+          const { addPendingDeletionsBulk } = await import('@/lib/sync');
+          await addPendingDeletionsBulk(currentIds);
+        }
         notifySync();
       },
 
@@ -88,6 +108,11 @@ export const useTransactionsStore = create<TransactionsState>()(
     }
   )
 );
+
+// Resolve hydration promise when store loads from AsyncStorage.
+useTransactionsStore.persist.onFinishHydration(() => {
+  _onHydrate?.();
+});
 
 /** Non-reactive snapshot for queries / sync. */
 export function getTransactions(): Transaction[] {

@@ -8,11 +8,12 @@ import { useTransactionsStore } from '@/store/useTransactionsStore';
 
 export function BalanceCard() {
   const currency = useSettingsStore((s) => s.currency);
+  const carryForward = useSettingsStore((s) => s.carryForward);
   const items = useTransactionsStore((s) => s.items);
 
   const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
   const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-  const balance = income - expense;
+  const balance = carryForward + income - expense;
 
   return (
     <Card>

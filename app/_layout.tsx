@@ -1,11 +1,14 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Drawer } from 'expo-router/drawer';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { AppDrawerContent } from '@/components/AppDrawerContent';
-import { colors, typography } from '@/theme/tokens';
+import { SkeletonCard } from '@/components/Shimmer';
+import { colors, typography, spacing } from '@/theme/tokens';
+import { View } from 'react-native';
+import { isStoreHydrated } from '@/store/useTransactionsStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,9 +28,29 @@ const TITLE_MAP: Record<string, string> = {
   yearly: 'Yearly Report',
   accounts: 'Accounts',
   history: 'History',
+  'close-account': 'Close Account',
 };
 
 export default function RootLayout() {
+  const [ready, setReady] = useState(isStoreHydrated());
+
+  useEffect(() => {
+    if (!ready) {
+      import('@/store/useTransactionsStore').then((m) =>
+        m.hydrated.then(() => setReady(true))
+      );
+    }
+  }, []);
+
+  if (!ready) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.white, padding: spacing.lg }}>
+        <StatusBar style="dark" />
+        <SkeletonCard />
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>

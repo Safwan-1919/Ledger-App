@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sana Printers",
     "slug": "sana-printers",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "scheme": "sana-printers",
     "userInterfaceStyle": "light",
@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sanaprinters.expense"
@@ -33,12 +35,13 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
+        "projectId": "5fbaff96-0212-4695-9e92-d1166a67128b"
       }
     },
     "plugins": [
       "expo-router",
       "expo-font",
+      "expo-updates",
       "@react-native-community/datetimepicker",
       [
         "expo-image-picker",
@@ -47,6 +50,14 @@
           "cameraPermission": "Sana Printers needs your camera to capture receipts."
         }
       ]
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/5fbaff96-0212-4695-9e92-d1166a67128b",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 300
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

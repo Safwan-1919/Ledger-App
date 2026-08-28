@@ -61,6 +61,7 @@ export function TransactionForm({
   }
 
   function handleSubmit() {
+    setError(undefined);
     const value = Number(amount);
     if (!Number.isFinite(value) || value <= 0) {
       setError('Enter an amount greater than 0.');

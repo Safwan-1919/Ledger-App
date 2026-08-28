@@ -18,8 +18,12 @@ import type { Period, Transaction } from '@/types';
 export function ReportView({ period }: { period: Period }) {
   const currency = useSettingsStore((s) => s.currency);
   const { groups, totals, items } = useReportData(period);
+  const fullGroups = computeGroups(items, period);
   const { visible, hasMore, loadMore } = useLocalPagination(items, 30);
-  const visibleGroups = computeGroups(visible, period);
+  const visibleIds = new Set(visible.map((t) => t.id));
+  const visibleGroups = fullGroups
+    .map((g) => ({ ...g, items: g.items.filter((t) => visibleIds.has(t.id)) }))
+    .filter((g) => g.items.length > 0);
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {

@@ -49,6 +49,13 @@ export async function addPendingDeletion(id: string): Promise<void> {
   }
 }
 
+export async function addPendingDeletionsBulk(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const existing = await getPendingDeletions();
+  const merged = [...new Set([...existing, ...ids])];
+  await AsyncStorage.setItem(DELETIONS_KEY, JSON.stringify(merged));
+}
+
 function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
