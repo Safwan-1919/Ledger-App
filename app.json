@@ -21,6 +21,7 @@
     },
     "android": {
       "package": "com.sanaprinters.expense",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",
