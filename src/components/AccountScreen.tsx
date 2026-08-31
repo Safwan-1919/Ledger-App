@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -28,6 +28,13 @@ export function AccountScreen({ type }: { type: TxType }) {
     if (items.length === 0) {
       syncNow().catch(() => undefined);
     }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncNow().catch(() => undefined);
+    }, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = useMemo(() => {

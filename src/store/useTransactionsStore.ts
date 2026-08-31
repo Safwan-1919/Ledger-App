@@ -18,6 +18,8 @@ interface TransactionsState {
   clearAll: () => Promise<void>;
   /** Test/reseed helper kept internal. */
   replaceAll: (items: Transaction[]) => void;
+  /** Merge server items: for each server item, keep it if local doesn't have it or server is newer. */
+  mergeFromServer: (serverItems: Transaction[]) => void;
 }
 
 function notifySync() {
@@ -99,6 +101,19 @@ export const useTransactionsStore = create<TransactionsState>()(
       },
 
       replaceAll: (items) => set({ items }),
+
+      mergeFromServer: (serverItems) => {
+        set((s) => {
+          const localMap = new Map(s.items.map((t) => [t.id, t]));
+          for (const serverTx of serverItems) {
+            const localTx = localMap.get(serverTx.id);
+            if (!localTx || serverTx.updatedAt > localTx.updatedAt) {
+              localMap.set(serverTx.id, serverTx);
+            }
+          }
+          return { items: Array.from(localMap.values()) };
+        });
+      },
     }),
     {
       name: 'ledger-transactions',

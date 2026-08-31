@@ -165,19 +165,19 @@ export async function syncNow(): Promise<void> {
       await clearPendingDeletions();
     }
 
-    // If local is empty but server has data, pull from server.
-    if (items.length === 0) {
-      const snap = await getDocs(colRef);
-      if (snap.docs.length > 0) {
-        const serverItems = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
-        const { useTransactionsStore } = await import('@/store/useTransactionsStore');
-        useTransactionsStore.getState().replaceAll(serverItems);
-        return;
-      }
+    // Always pull server items and merge with local (newest updatedAt wins).
+    const snap = await getDocs(colRef);
+    if (snap.docs.length > 0) {
+      const serverItems = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
+      const { useTransactionsStore } = await import('@/store/useTransactionsStore');
+      useTransactionsStore.getState().mergeFromServer(serverItems);
     }
 
+    // Re-read local items after merge for push.
+    const mergedItems = getTransactions();
+
     // Push changed items to server.
-    const changed = items.filter((t) => t.updatedAt > meta.lastSyncedAt);
+    const changed = mergedItems.filter((t) => t.updatedAt > meta.lastSyncedAt);
     if (changed.length > 0) {
       const batch = writeBatch(db);
       for (const t of changed) {
@@ -186,11 +186,11 @@ export async function syncNow(): Promise<void> {
       await batch.commit();
     }
 
-    const maxUpdated = items.reduce((m, t) => Math.max(m, t.updatedAt), meta.lastSyncedAt);
+    const maxUpdated = mergedItems.reduce((m, t) => Math.max(m, t.updatedAt), meta.lastSyncedAt);
     await writeMeta({ lastSyncedAt: maxUpdated });
 
     // Auto-generate reports for completed months/years (once per day).
-    generateCompletedReports(items).catch(() => undefined);
+    generateCompletedReports(mergedItems).catch(() => undefined);
   })().finally(() => {
     inFlight = null;
   });
