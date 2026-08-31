@@ -19,7 +19,7 @@ interface TransactionsState {
   /** Test/reseed helper kept internal. */
   replaceAll: (items: Transaction[]) => void;
   /** Merge server items: for each server item, keep it if local doesn't have it or server is newer. */
-  mergeFromServer: (serverItems: Transaction[]) => void;
+  mergeFromServer: (serverItems: Transaction[], lastSyncedAt: number) => void;
 }
 
 function notifySync() {
@@ -102,15 +102,27 @@ export const useTransactionsStore = create<TransactionsState>()(
 
       replaceAll: (items) => set({ items }),
 
-      mergeFromServer: (serverItems) => {
+      mergeFromServer: (serverItems, lastSyncedAt) => {
         set((s) => {
+          const serverMap = new Map(serverItems.map((t) => [t.id, t]));
           const localMap = new Map(s.items.map((t) => [t.id, t]));
-          for (const serverTx of serverItems) {
-            const localTx = localMap.get(serverTx.id);
+
+          // Merge: keep newer version of each item.
+          for (const [id, serverTx] of serverMap) {
+            const localTx = localMap.get(id);
             if (!localTx || serverTx.updatedAt > localTx.updatedAt) {
-              localMap.set(serverTx.id, serverTx);
+              localMap.set(id, serverTx);
             }
           }
+
+          // Remove local items that are NOT on server AND were already synced before.
+          // (If they were never synced, they're new local items — keep them.)
+          for (const [id, localTx] of localMap) {
+            if (!serverMap.has(id) && localTx.updatedAt <= lastSyncedAt) {
+              localMap.delete(id);
+            }
+          }
+
           return { items: Array.from(localMap.values()) };
         });
       },

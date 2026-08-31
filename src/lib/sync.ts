@@ -170,7 +170,13 @@ export async function syncNow(): Promise<void> {
     if (snap.docs.length > 0) {
       const serverItems = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
       const { useTransactionsStore } = await import('@/store/useTransactionsStore');
-      useTransactionsStore.getState().mergeFromServer(serverItems);
+      useTransactionsStore.getState().mergeFromServer(serverItems, meta.lastSyncedAt);
+    } else {
+      // Server is empty — if local was synced before, clear it (all items were deleted).
+      const { useTransactionsStore } = await import('@/store/useTransactionsStore');
+      if (meta.lastSyncedAt > 0) {
+        useTransactionsStore.getState().mergeFromServer([], meta.lastSyncedAt);
+      }
     }
 
     // Re-read local items after merge for push.
