@@ -1,5 +1,7 @@
 export type TxType = 'income' | 'expense';
 
+export type PaymentMethod = 'cash' | 'online';
+
 export type Period = 'today' | 'weekly' | 'monthly' | 'yearly' | 'all';
 
 export interface Transaction {
@@ -12,6 +14,8 @@ export interface Transaction {
   note?: string;
   /** Compressed receipt as base64 data URI (e.g. "data:image/png;base64,..."). */
   receiptData?: string;
+  /** Payment method: cash or online. */
+  paymentMethod: PaymentMethod;
   createdAt: number;
   updatedAt: number;
 }
@@ -23,6 +27,7 @@ export interface TransactionInput {
   date: string;
   note?: string;
   receiptData?: string;
+  paymentMethod: PaymentMethod;
 }
 
 export interface GroupSummary {

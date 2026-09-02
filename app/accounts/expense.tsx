@@ -1,6 +1,10 @@
-import React from 'react';
-import { AccountScreen } from '@/components/AccountScreen';
+import React, { useEffect } from 'react';
+import { useRouter } from 'expo-router';
 
-export default function ExpenseScreen() {
-  return <AccountScreen type="expense" />;
+export default function ExpenseRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/accounts');
+  }, []);
+  return null;
 }

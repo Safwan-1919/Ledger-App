@@ -57,6 +57,7 @@ export const useTransactionsStore = create<TransactionsState>()(
           date: input.date,
           note: input.note?.trim() || undefined,
           receiptData: input.receiptData,
+          paymentMethod: input.paymentMethod ?? 'cash',
           createdAt: now,
           updatedAt: now,
         };

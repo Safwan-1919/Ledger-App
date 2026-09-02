@@ -26,11 +26,7 @@ export default function EditTransaction() {
   const handleSubmit = (input: TransactionInput) => {
     update.mutate({ id: tx.id, patch: input }, {
       onSuccess: () => {
-        if (tx.type === 'expense') {
-          router.replace('/accounts/expense');
-        } else {
-          router.replace('/accounts');
-        }
+        router.replace('/accounts');
       },
       onError: (e) => Alert.alert('Error', (e as Error).message),
     });

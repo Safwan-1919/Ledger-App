@@ -8,7 +8,7 @@ import { T, TextField, Button, Row, Card } from '@/components/ui';
 import { colors, spacing, layout } from '@/theme/tokens';
 import { toISODate, fromISODate } from '@/lib/dates';
 import { compressReceipt } from '@/lib/compression';
-import type { Transaction, TransactionInput, TxType } from '@/types';
+import type { Transaction, TransactionInput, TxType, PaymentMethod } from '@/types';
 
 export function TransactionForm({
   type,
@@ -28,6 +28,7 @@ export function TransactionForm({
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
   const [note, setNote] = useState(initial?.note ?? '');
   const [receiptData, setReceiptData] = useState<string | undefined>(initial?.receiptData);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initial?.paymentMethod ?? 'cash');
   const [showPicker, setShowPicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -74,6 +75,7 @@ export function TransactionForm({
       date: toISODate(date),
       note: note.trim() || undefined,
       receiptData,
+      paymentMethod,
     });
   }
 
@@ -103,6 +105,36 @@ export function TransactionForm({
         )}
 
         <View style={{ height: spacing.lg }} />
+
+        <T variant="label">Payment Method</T>
+        <Row style={{ gap: spacing.sm, marginTop: spacing.xs, marginBottom: spacing.lg }}>
+          <Pressable
+            onPress={() => setPaymentMethod('cash')}
+            style={({ pressed }) => [
+              toggleBtn,
+              paymentMethod === 'cash' && toggleBtnActive,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Feather name="dollar-sign" size={14} color={paymentMethod === 'cash' ? colors.white : colors.black} />
+            <T variant="small" style={{ color: paymentMethod === 'cash' ? colors.white : colors.black, fontWeight: '700' }}>
+              Cash
+            </T>
+          </Pressable>
+          <Pressable
+            onPress={() => setPaymentMethod('online')}
+            style={({ pressed }) => [
+              toggleBtn,
+              paymentMethod === 'online' && toggleBtnActive,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Feather name="smartphone" size={14} color={paymentMethod === 'online' ? colors.white : colors.black} />
+            <T variant="small" style={{ color: paymentMethod === 'online' ? colors.white : colors.black, fontWeight: '700' }}>
+              Online
+            </T>
+          </Pressable>
+        </Row>
 
         <TextField
           label="Reason (optional)"
@@ -169,4 +201,19 @@ const receiptPreview: ImageStyle = {
   marginTop: spacing.md,
   borderWidth: layout.borderWidth,
   borderColor: colors.line,
+};
+const toggleBtn: ViewStyle = {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.xs,
+  borderWidth: layout.borderWidth,
+  borderColor: colors.line,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.md,
+};
+const toggleBtnActive: ViewStyle = {
+  backgroundColor: colors.black,
+  borderColor: colors.black,
 };

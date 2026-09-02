@@ -21,6 +21,7 @@ export function TransactionItem({
   const currency = useSettingsStore((s) => s.currency);
   const isIncome = tx.type === 'income';
   const receipt = tx.receiptData;
+  const isOnline = tx.paymentMethod === 'online';
 
   return (
     <Pressable onPress={() => onPress?.(tx)} style={({ pressed }) => [itemWrap, pressed && { opacity: 0.6 }]}>
@@ -43,7 +44,12 @@ export function TransactionItem({
             </T>
           </Row>
           <Row style={{ justifyContent: 'space-between', marginTop: 2 }}>
-            <T variant="small">{relativeDayLabel(tx.date)}</T>
+            <Row style={{ gap: spacing.xs, alignItems: 'center' }}>
+              <T variant="small">{relativeDayLabel(tx.date)}</T>
+              <T variant="micro" style={{ color: colors.muted }}>·</T>
+              <Feather name={isOnline ? 'smartphone' : 'dollar-sign'} size={10} color={colors.muted} />
+              <T variant="micro" style={{ color: colors.muted }}>{isOnline ? 'Online' : 'Cash'}</T>
+            </Row>
             <Tag inverse={isIncome}>{isIncome ? 'IN' : 'EX'}</Tag>
           </Row>
         </View>

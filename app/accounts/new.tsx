@@ -25,11 +25,7 @@ export default function NewTransaction() {
   const handleSubmit = (input: TransactionInput) => {
     add.mutate(input, {
       onSuccess: () => {
-        if (type === 'expense') {
-          router.replace('/accounts/expense');
-        } else {
-          router.replace('/accounts');
-        }
+        router.replace('/accounts');
       },
       onError: (e) => Alert.alert('Error', (e as Error).message),
     });
