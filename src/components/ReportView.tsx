@@ -15,14 +15,20 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { SkeletonCard, SkeletonList } from '@/components/Shimmer';
 import type { Period, Transaction } from '@/types';
 
-export function ReportView({ period, search }: { period: Period; search?: string }) {
+export function ReportView({ period, search, payFilter }: { period: Period; search?: string; payFilter?: string | null }) {
   const currency = useSettingsStore((s) => s.currency);
   const { groups, totals, items } = useReportData(period);
   const filteredItems = useMemo(() => {
-    if (!search?.trim()) return items;
-    const q = search.trim().toLowerCase();
-    return items.filter((t) => t.reason.toLowerCase().includes(q));
-  }, [items, search]);
+    let result = items;
+    if (search?.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((t) => t.reason.toLowerCase().includes(q));
+    }
+    if (payFilter) {
+      result = result.filter((t) => t.paymentMethod === payFilter);
+    }
+    return result;
+  }, [items, search, payFilter]);
   const fullGroups = computeGroups(filteredItems, period);
   const { visible, hasMore, loadMore } = useLocalPagination(filteredItems, 30);
   const visibleIds = new Set(visible.map((t) => t.id));
@@ -30,6 +36,27 @@ export function ReportView({ period, search }: { period: Period; search?: string
     .map((g) => ({ ...g, items: g.items.filter((t) => visibleIds.has(t.id)) }))
     .filter((g) => g.items.length > 0);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const displayTotals = useMemo(() => {
+    const t = filteredItems.reduce(
+      (acc, item) => {
+        if (item.type === 'income') {
+          acc.income += item.amount;
+          if (item.paymentMethod === 'cash') acc.incomeCash += item.amount;
+          else acc.incomeOnline += item.amount;
+        } else {
+          acc.expense += item.amount;
+          if (item.paymentMethod === 'cash') acc.expenseCash += item.amount;
+          else acc.expenseOnline += item.amount;
+        }
+        acc.count += 1;
+        return acc;
+      },
+      { income: 0, expense: 0, net: 0, count: 0, incomeCash: 0, incomeOnline: 0, expenseCash: 0, expenseOnline: 0 }
+    );
+    t.net = t.income - t.expense;
+    return t;
+  }, [filteredItems]);
 
   useEffect(() => {
     const timer = setTimeout(() => setInitialLoading(false), 600);
@@ -54,15 +81,15 @@ export function ReportView({ period, search }: { period: Period; search?: string
     <View style={{ gap: spacing.lg }}>
       <Card>
         <Row style={{ gap: spacing.md }}>
-          <Stat label="Income" value={formatCurrency(totals.income, currency)} accent="income" compact />
-          <Stat label="Expense" value={formatCurrency(totals.expense, currency)} accent="expense" compact />
+          <Stat label="Income" value={formatCurrency(displayTotals.income, currency)} accent="income" compact />
+          <Stat label="Expense" value={formatCurrency(displayTotals.expense, currency)} accent="expense" compact />
         </Row>
         <View style={{ height: spacing.sm }} />
-        <Stat label="Net Balance" value={formatCurrency(totals.net, currency)} compact />
+        <Stat label="Net Balance" value={formatCurrency(displayTotals.net, currency)} compact />
         <Divider margin={spacing.sm} />
         <Row style={{ gap: spacing.sm }}>
-          <Stat label="Cash" value={formatCurrency(totals.incomeCash - totals.expenseCash, currency)} compact />
-          <Stat label="Online" value={formatCurrency(totals.incomeOnline - totals.expenseOnline, currency)} compact />
+          <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
+          <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
         </Row>
         <Divider margin={spacing.sm} />
         <Button
