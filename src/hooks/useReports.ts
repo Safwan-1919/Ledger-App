@@ -15,14 +15,19 @@ export function useReportData(period: Period) {
     const groups = computeGroups(inRange, period);
     const totals: ReportTotals = inRange.reduce(
       (acc, t) => {
-        if (t.type === 'income') acc.income += t.amount;
-        else acc.expense += t.amount;
+        if (t.type === 'income') {
+          acc.income += t.amount;
+          if (t.paymentMethod === 'cash') acc.incomeCash += t.amount;
+          else acc.incomeOnline += t.amount;
+        } else {
+          acc.expense += t.amount;
+          if (t.paymentMethod === 'cash') acc.expenseCash += t.amount;
+          else acc.expenseOnline += t.amount;
+        }
         acc.count += 1;
-        if (t.paymentMethod === 'cash') acc.cash += t.amount;
-        else acc.online += t.amount;
         return acc;
       },
-      { income: 0, expense: 0, net: 0, count: 0, cash: 0, online: 0 }
+      { income: 0, expense: 0, net: 0, count: 0, incomeCash: 0, incomeOnline: 0, expenseCash: 0, expenseOnline: 0 }
     );
     totals.net = totals.income - totals.expense;
     return { groups, totals, items: inRange as Transaction[] };

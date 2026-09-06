@@ -54,12 +54,17 @@ export function ReportView({ period }: { period: Period }) {
         </Row>
         <View style={{ height: spacing.sm }} />
         <Stat label="Net Balance" value={formatCurrency(totals.net, currency)} compact />
-        <Divider margin={spacing.md} />
-        <Row style={{ gap: spacing.md }}>
-          <Stat label="Cash" value={formatCurrency(totals.cash, currency)} compact />
-          <Stat label="Online" value={formatCurrency(totals.online, currency)} compact />
+        <Divider margin={spacing.sm} />
+        <Row style={{ gap: spacing.sm }}>
+          <Stat label="IN Cash" value={formatCurrency(totals.incomeCash, currency)} compact />
+          <Stat label="IN Online" value={formatCurrency(totals.incomeOnline, currency)} compact />
         </Row>
-        <Divider margin={spacing.md} />
+        <View style={{ height: spacing.sm }} />
+        <Row style={{ gap: spacing.sm }}>
+          <Stat label="EX Cash" value={formatCurrency(totals.expenseCash, currency)} compact />
+          <Stat label="EX Online" value={formatCurrency(totals.expenseOnline, currency)} compact />
+        </Row>
+        <Divider margin={spacing.sm} />
         <Button
           label="Download PDF report"
           variant="outline"

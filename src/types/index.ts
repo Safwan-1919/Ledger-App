@@ -44,6 +44,8 @@ export interface ReportTotals {
   expense: number;
   net: number;
   count: number;
-  cash: number;
-  online: number;
+  incomeCash: number;
+  incomeOnline: number;
+  expenseCash: number;
+  expenseOnline: number;
 }
