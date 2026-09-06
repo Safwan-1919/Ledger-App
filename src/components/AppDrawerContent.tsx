@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, Pressable, Alert, type ViewStyle, type TextStyle, type ImageStyle } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList, type DrawerContentComponentProps } from '@react-navigation/drawer';
+import { CommonActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { T, Divider, Card } from '@/components/ui';
 import { colors, spacing, layout } from '@/theme/tokens';
@@ -44,7 +45,15 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
           return (
             <Pressable
               key={it.name}
-              onPress={() => props.navigation.navigate(it.name)}
+              onPress={() => {
+                if (it.name === 'accounts') {
+                  props.navigation.dispatch(
+                    CommonActions.navigate('accounts', { screen: 'index' })
+                  );
+                } else {
+                  props.navigation.navigate(it.name);
+                }
+              }}
               style={({ pressed }) => [
                 drawerItem,
                 active && drawerItemActive,
