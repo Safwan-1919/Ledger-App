@@ -65,14 +65,14 @@ function buildSummaryTotals(
   const incomeOnline = items.filter((t) => t.type === 'income' && t.paymentMethod === 'online').reduce((a, t) => a + t.amount, 0);
   const expenseCash = items.filter((t) => t.type === 'expense' && t.paymentMethod === 'cash').reduce((a, t) => a + t.amount, 0);
   const expenseOnline = items.filter((t) => t.type === 'expense' && t.paymentMethod === 'online').reduce((a, t) => a + t.amount, 0);
+  const cashNet = incomeCash - expenseCash;
+  const onlineNet = incomeOnline - expenseOnline;
   const stats = [
     { label: 'Income', value: formatCurrency(income, currency), cls: 'income' },
     { label: 'Expense', value: formatCurrency(expense, currency), cls: 'expense' },
     { label: 'Net', value: formatCurrency(income - expense, currency) },
-    { label: 'Income (Cash)', value: formatCurrency(incomeCash, currency), cls: 'income' },
-    { label: 'Income (Online)', value: formatCurrency(incomeOnline, currency), cls: 'income' },
-    { label: 'Expense (Cash)', value: formatCurrency(expenseCash, currency), cls: 'expense' },
-    { label: 'Expense (Online)', value: formatCurrency(expenseOnline, currency), cls: 'expense' },
+    { label: 'Cash', value: formatCurrency(cashNet, currency) },
+    { label: 'Online', value: formatCurrency(onlineNet, currency) },
     { label: 'Transactions', value: String(items.length) },
     ...(extra ?? []),
   ];
