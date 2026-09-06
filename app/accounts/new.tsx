@@ -10,7 +10,7 @@ import { useAddTransaction } from '@/hooks/useTransactions';
 import type { TransactionInput, TxType } from '@/types';
 
 export default function NewTransaction() {
-  const params = useLocalSearchParams<{ type?: string }>();
+  const params = useLocalSearchParams<{ type?: string; from?: string }>();
   const router = useRouter();
   const add = useAddTransaction();
   const type: TxType = params.type === 'expense' ? 'expense' : 'income';
@@ -25,7 +25,7 @@ export default function NewTransaction() {
   const handleSubmit = (input: TransactionInput) => {
     add.mutate(input, {
       onSuccess: () => {
-        router.replace('/accounts');
+        router.replace(params.from === 'today' ? '/today' : '/accounts');
       },
       onError: (e) => Alert.alert('Error', (e as Error).message),
     });

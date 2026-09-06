@@ -81,10 +81,13 @@ export function ReportView({ period, search, payFilter, cashOnly }: { period: Pe
     <View style={{ gap: spacing.lg }}>
       <Card>
         {cashOnly ? (
-          <Row style={{ gap: spacing.sm }}>
-            <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
-            <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
-          </Row>
+          <>
+            <Row style={{ gap: spacing.sm }}>
+              <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
+              <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
+            </Row>
+            <View style={{ height: spacing.sm }} />
+          </>
         ) : (
           <>
             <Row style={{ gap: spacing.md }}>

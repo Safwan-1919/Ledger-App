@@ -32,7 +32,7 @@ export default function TodayReport() {
     setRefreshing(false);
   }, []);
 
-  const add = () => router.push({ pathname: '/accounts/new', params: { type: activeTab } });
+  const add = () => router.push({ pathname: '/accounts/new', params: { type: activeTab, from: 'today' } });
 
   return (
     <Screen onRefresh={onRefresh} refreshing={refreshing}>
