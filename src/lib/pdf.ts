@@ -3,65 +3,88 @@ import * as Sharing from 'expo-sharing';
 import { File } from 'expo-file-system';
 import { formatCurrency } from '@/lib/format';
 import { periodRange } from '@/lib/dates';
-import { computeGroups } from '@/lib/transactions';
 import type { Period, Transaction } from '@/types';
 
-function buildHtml(
-  title: string,
-  totals: { income: number; expense: number; net: number; count: number; cash: number; online: number },
-  groups: ReturnType<typeof computeGroups>,
-  currency: string,
-): string {
-  const rows = groups
-    .flatMap((g) =>
-      g.items.map(
-        (t: Transaction) => `<tr>
-        <td>${t.date}</td>
-        <td>${t.reason}</td>
-        <td style="text-transform:uppercase">${t.type}</td>
-        <td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td>
-        <td style="text-align:right">${formatCurrency(t.amount, currency)}</td>
-      </tr>`,
-      ),
-    )
-    .join('');
+const PDF_STYLE = `
+  @page { margin: 15mm; }
+  body { font-family: monospace; padding: 0; margin: 0; color: #000; font-size: 11px; }
+  h1 { font-size: 16px; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 0 0 10px 0; }
+  h2 { font-size: 13px; margin: 14px 0 6px 0; padding: 4px 8px; background: #f0f0f0; border: 1px solid #000; }
+  .totals { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  .stat { border: 1px solid #000; padding: 6px 8px; }
+  .stat small { display: block; font-size: 9px; text-transform: uppercase; }
+  .stat strong { font-size: 12px; }
+  .section { page-break-inside: avoid; }
+  .section-break { page-break-before: always; padding-top: 10px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10px; page-break-inside: avoid; }
+  th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+  th { background: #000; color: #fff; text-transform: uppercase; font-size: 9px; }
+  .income { color: #16a34a; }
+  .expense { color: #dc2626; }
+  .carry { color: #2563eb; }
+  .footer { margin-top: 16px; font-size: 8px; color: #666; border-top: 1px solid #ccc; padding-top: 4px; }
+  .empty { text-align: center; color: #999; padding: 10px; }
+`;
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: monospace; padding: 20px; color: #000; }
-    h1 { font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 6px; }
-    .totals { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
-    .stat { border: 1px solid #000; padding: 8px 12px; }
-    .stat small { display: block; font-size: 10px; text-transform: uppercase; }
-    .stat strong { font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
-    th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
-    th { background: #000; color: #fff; text-transform: uppercase; font-size: 10px; }
-    .income { color: #16a34a; }
-    .expense { color: #dc2626; }
-    .footer { margin-top: 20px; font-size: 9px; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
-  </style>
-</head>
-<body>
+function buildIncomeTable(items: Transaction[], currency: string): string {
+  const incomeItems = items.filter((t) => t.type === 'income');
+  if (incomeItems.length === 0) return '<p class="empty">No income transactions</p>';
+  const total = incomeItems.reduce((a, t) => a + t.amount, 0);
+  const rows = incomeItems.map((t) => `<tr>
+    <td>${t.date}</td><td>${t.reason}</td><td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td>
+    <td style="text-align:right">${formatCurrency(t.amount, currency)}</td>
+  </tr>`).join('');
+  return `<table>
+    <thead><tr><th>Date</th><th>Reason</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${rows}<tr style="font-weight:bold"><td colspan="3">Total Income</td><td style="text-align:right" class="income">${formatCurrency(total, currency)}</td></tr></tbody>
+  </table>`;
+}
+
+function buildExpenseTable(items: Transaction[], currency: string): string {
+  const expenseItems = items.filter((t) => t.type === 'expense');
+  if (expenseItems.length === 0) return '<p class="empty">No expense transactions</p>';
+  const total = expenseItems.reduce((a, t) => a + t.amount, 0);
+  const rows = expenseItems.map((t) => `<tr>
+    <td>${t.date}</td><td>${t.reason}</td><td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td>
+    <td style="text-align:right">${formatCurrency(t.amount, currency)}</td>
+  </tr>`).join('');
+  return `<table>
+    <thead><tr><th>Date</th><th>Reason</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${rows}<tr style="font-weight:bold"><td colspan="3">Total Expense</td><td style="text-align:right" class="expense">${formatCurrency(total, currency)}</td></tr></tbody>
+  </table>`;
+}
+
+function buildSummaryTotals(
+  items: Transaction[],
+  currency: string,
+  extra?: { label: string; value: string; cls?: string }[],
+): string {
+  const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+  const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+  const cash = items.filter((t) => t.paymentMethod === 'cash').reduce((a, t) => a + t.amount, 0);
+  const online = items.filter((t) => t.paymentMethod === 'online').reduce((a, t) => a + t.amount, 0);
+  const stats = [
+    { label: 'Income', value: formatCurrency(income, currency), cls: 'income' },
+    { label: 'Expense', value: formatCurrency(expense, currency), cls: 'expense' },
+    { label: 'Net', value: formatCurrency(income - expense, currency) },
+    { label: 'Cash', value: formatCurrency(cash, currency) },
+    { label: 'Online', value: formatCurrency(online, currency) },
+    { label: 'Transactions', value: String(items.length) },
+    ...(extra ?? []),
+  ];
+  return `<div class="totals">${stats.map((s) =>
+    `<div class="stat"><small>${s.label}</small><strong${s.cls ? ` class="${s.cls}"` : ''}>${s.value}</strong></div>`
+  ).join('')}</div>`;
+}
+
+function buildReportHtml(title: string, items: Transaction[], currency: string, footer?: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${PDF_STYLE}</style></head><body>
   <h1>SANA PRINTERS — ${title}</h1>
-  <div class="totals">
-    <div class="stat"><small>Income</small><strong class="income">${formatCurrency(totals.income, currency)}</strong></div>
-    <div class="stat"><small>Expense</small><strong class="expense">${formatCurrency(totals.expense, currency)}</strong></div>
-    <div class="stat"><small>Net</small><strong>${formatCurrency(totals.net, currency)}</strong></div>
-    <div class="stat"><small>Cash</small><strong>${formatCurrency(totals.cash, currency)}</strong></div>
-    <div class="stat"><small>Online</small><strong>${formatCurrency(totals.online, currency)}</strong></div>
-    <div class="stat"><small>Transactions</small><strong>${totals.count}</strong></div>
-  </div>
-  <table>
-    <thead><tr><th>Date</th><th>Reason</th><th>Type</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" style="text-align:center">No transactions</td></tr>'}</tbody>
-  </table>
-  <div class="footer">Generated by Sana Printers · ${new Date().toLocaleDateString()}</div>
-</body>
-</html>`;
+  ${buildSummaryTotals(items, currency)}
+  <div class="section"><h2>Income</h2>${buildIncomeTable(items, currency)}</div>
+  <div class="section-break"><h2>Expense</h2>${buildExpenseTable(items, currency)}</div>
+  <div class="footer">${footer ?? 'Generated by Sana Printers'} · ${new Date().toLocaleDateString()}</div>
+</body></html>`;
 }
 
 function buildReport(
@@ -69,20 +92,6 @@ function buildReport(
   items: Transaction[],
   currency: string,
 ): { title: string; html: string } {
-  const groups = computeGroups(items, period);
-  const totals = items.reduce(
-    (acc, t) => {
-      if (t.type === 'income') acc.income += t.amount;
-      else acc.expense += t.amount;
-      acc.count += 1;
-      if (t.paymentMethod === 'cash') acc.cash += t.amount;
-      else acc.online += t.amount;
-      return acc;
-    },
-    { income: 0, expense: 0, net: 0, count: 0, cash: 0, online: 0 },
-  );
-  totals.net = totals.income - totals.expense;
-
   const range = periodRange(period);
   let title: string;
   if (period === 'today') {
@@ -96,7 +105,7 @@ function buildReport(
   } else {
     title = 'All Time Report';
   }
-  return { title, html: buildHtml(title, totals, groups, currency) };
+  return { title, html: buildReportHtml(title, items, currency) };
 }
 
 export async function generateReportBase64(
@@ -142,66 +151,11 @@ function filterByYear(items: Transaction[], year: number): Transaction[] {
   return items.filter((t) => t.date.startsWith(`${year}-`));
 }
 
-function buildPeriodHtml(title: string, items: Transaction[], currency: string): string {
-  const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
-  const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-  const cash = items.filter((t) => t.paymentMethod === 'cash').reduce((a, t) => a + t.amount, 0);
-  const online = items.filter((t) => t.paymentMethod === 'online').reduce((a, t) => a + t.amount, 0);
-  const rows = items
-    .map(
-      (t) => `<tr>
-        <td>${t.date}</td>
-        <td>${t.reason}</td>
-        <td style="text-transform:uppercase">${t.type}</td>
-        <td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td>
-        <td style="text-align:right">${formatCurrency(t.amount, currency)}</td>
-      </tr>`,
-    )
-    .join('');
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: monospace; padding: 20px; color: #000; }
-    h1 { font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 6px; }
-    .totals { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
-    .stat { border: 1px solid #000; padding: 8px 12px; }
-    .stat small { display: block; font-size: 10px; text-transform: uppercase; }
-    .stat strong { font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
-    th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
-    th { background: #000; color: #fff; text-transform: uppercase; font-size: 10px; }
-    .income { color: #16a34a; }
-    .expense { color: #dc2626; }
-    .footer { margin-top: 20px; font-size: 9px; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
-  </style>
-</head>
-<body>
-  <h1>SANA PRINTERS — ${title}</h1>
-  <div class="totals">
-    <div class="stat"><small>Income</small><strong class="income">${formatCurrency(income, currency)}</strong></div>
-    <div class="stat"><small>Expense</small><strong class="expense">${formatCurrency(expense, currency)}</strong></div>
-    <div class="stat"><small>Net</small><strong>${formatCurrency(income - expense, currency)}</strong></div>
-    <div class="stat"><small>Cash</small><strong>${formatCurrency(cash, currency)}</strong></div>
-    <div class="stat"><small>Online</small><strong>${formatCurrency(online, currency)}</strong></div>
-    <div class="stat"><small>Transactions</small><strong>${items.length}</strong></div>
-  </div>
-  <table>
-    <thead><tr><th>Date</th><th>Reason</th><th>Type</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" style="text-align:center">No transactions</td></tr>'}</tbody>
-  </table>
-  <div class="footer">Generated by Sana Printers · ${new Date().toLocaleDateString()}</div>
-</body>
-</html>`;
-}
-
 export async function generateMonthPdf(year: number, month: number, items: Transaction[], currency: string): Promise<string> {
   const filtered = filterByMonth(items, year, month);
   const label = new Date(year, month, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const title = `${label} Report`;
-  const html = buildPeriodHtml(title, filtered, currency);
+  const html = buildReportHtml(title, filtered, currency);
   const { uri } = await Print.printToFileAsync({ html, base64: false });
   const file = new File(uri);
   const buffer = await file.arrayBuffer();
@@ -214,7 +168,7 @@ export async function generateMonthPdf(year: number, month: number, items: Trans
 export async function generateYearPdf(year: number, items: Transaction[], currency: string): Promise<string> {
   const filtered = filterByYear(items, year);
   const title = `${year} Yearly Report`;
-  const html = buildPeriodHtml(title, filtered, currency);
+  const html = buildReportHtml(title, filtered, currency);
   const { uri } = await Print.printToFileAsync({ html, base64: false });
   const file = new File(uri);
   const buffer = await file.arrayBuffer();
@@ -232,64 +186,36 @@ export async function generateCloseAccountPdf(
   const income = items.filter((t) => t.type === 'income').reduce((a, t) => a + t.amount, 0);
   const expense = items.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
   const balance = carryForward + income - expense;
-
-  const cash = items.filter((t) => t.paymentMethod === 'cash').reduce((a, t) => a + t.amount, 0);
-  const online = items.filter((t) => t.paymentMethod === 'online').reduce((a, t) => a + t.amount, 0);
-
   const dates = items.map((t) => t.date).sort();
   const from = dates[0] ?? new Date().toISOString().slice(0, 10);
   const to = dates[dates.length - 1] ?? new Date().toISOString().slice(0, 10);
 
-  const rows = items
-    .map(
-      (t) => `<tr>
-        <td>${t.date}</td>
-        <td>${t.reason}</td>
-        <td style="text-transform:uppercase">${t.type}</td>
-        <td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td>
-        <td style="text-align:right">${formatCurrency(t.amount, currency)}</td>
-      </tr>`,
-    )
-    .join('');
+  const incomeItems = items.filter((t) => t.type === 'income');
+  const expenseItems = items.filter((t) => t.type === 'expense');
+  const incTotal = incomeItems.reduce((a, t) => a + t.amount, 0);
+  const expTotal = expenseItems.reduce((a, t) => a + t.amount, 0);
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: monospace; padding: 20px; color: #000; }
-    h1 { font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 6px; }
-    .totals { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
-    .stat { border: 1px solid #000; padding: 8px 12px; }
-    .stat small { display: block; font-size: 10px; text-transform: uppercase; }
-    .stat strong { font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
-    th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
-    th { background: #000; color: #fff; text-transform: uppercase; font-size: 10px; }
-    .income { color: #16a34a; }
-    .expense { color: #dc2626; }
-    .carry { color: #2563eb; }
-    .footer { margin-top: 20px; font-size: 9px; color: #666; border-top: 1px solid #ccc; padding-top: 6px; }
-  </style>
-</head>
-<body>
+  const incRows = incomeItems.map((t) => `<tr><td>${t.date}</td><td>${t.reason}</td><td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td><td style="text-align:right">${formatCurrency(t.amount, currency)}</td></tr>`).join('');
+  const expRows = expenseItems.map((t) => `<tr><td>${t.date}</td><td>${t.reason}</td><td style="text-transform:capitalize">${t.paymentMethod ?? 'cash'}</td><td style="text-align:right">${formatCurrency(t.amount, currency)}</td></tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${PDF_STYLE}</style></head><body>
   <h1>SANA PRINTERS — Close Account (${from} to ${to})</h1>
-  <div class="totals">
-    <div class="stat"><small>Carry Forward</small><strong class="carry">${formatCurrency(carryForward, currency)}</strong></div>
-    <div class="stat"><small>Income</small><strong class="income">${formatCurrency(income, currency)}</strong></div>
-    <div class="stat"><small>Expense</small><strong class="expense">${formatCurrency(expense, currency)}</strong></div>
-    <div class="stat"><small>Cash</small><strong>${formatCurrency(cash, currency)}</strong></div>
-    <div class="stat"><small>Online</small><strong>${formatCurrency(online, currency)}</strong></div>
-    <div class="stat"><small>Final Balance</small><strong>${formatCurrency(balance, currency)}</strong></div>
-    <div class="stat"><small>Transactions</small><strong>${items.length}</strong></div>
+  ${buildSummaryTotals(items, currency, [
+    { label: 'Carry Forward', value: formatCurrency(carryForward, currency), cls: 'carry' },
+    { label: 'Final Balance', value: formatCurrency(balance, currency) },
+  ])}
+  <div class="section"><h2>Income</h2>
+    <table><thead><tr><th>Date</th><th>Reason</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${incRows || '<tr><td colspan="4" class="empty">No income</td></tr>'}
+    <tr style="font-weight:bold"><td colspan="3">Total Income</td><td style="text-align:right" class="income">${formatCurrency(incTotal, currency)}</td></tr></tbody></table>
   </div>
-  <table>
-    <thead><tr><th>Date</th><th>Reason</th><th>Type</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" style="text-align:center">No transactions</td></tr>'}</tbody>
-  </table>
+  <div class="section-break"><h2>Expense</h2>
+    <table><thead><tr><th>Date</th><th>Reason</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${expRows || '<tr><td colspan="4" class="empty">No expense</td></tr>'}
+    <tr style="font-weight:bold"><td colspan="3">Total Expense</td><td style="text-align:right" class="expense">${formatCurrency(expTotal, currency)}</td></tr></tbody></table>
+  </div>
   <div class="footer">Generated by Sana Printers · ${new Date().toLocaleDateString()}</div>
-</body>
-</html>`;
+</body></html>`;
 
   const { uri } = await Print.printToFileAsync({ html, base64: false });
   const file = new File(uri);
