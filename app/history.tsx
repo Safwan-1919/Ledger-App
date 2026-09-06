@@ -32,6 +32,12 @@ export default function HistoryScreen() {
     staleTime: 30_000,
   });
 
+  useEffect(() => {
+    if (reports.data !== undefined) {
+      generateAll.mutate();
+    }
+  }, [reports.data]);
+
   const generateAll = useMutation({
     mutationFn: generateMissingReports,
     onSuccess: (count) => {

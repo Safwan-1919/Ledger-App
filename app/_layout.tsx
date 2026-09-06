@@ -56,7 +56,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
         <Drawer
-          initialRouteName="accounts"
+          initialRouteName="today"
           drawerContent={(props) => <AppDrawerContent {...props} />}
           screenOptions={({ route }) => {
             const isIndex = route.name === 'index';
