@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Alert, type ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { T, Card, Stat, Row, Button, Divider } from '@/components/ui';
@@ -15,11 +15,16 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { SkeletonCard, SkeletonList } from '@/components/Shimmer';
 import type { Period, Transaction } from '@/types';
 
-export function ReportView({ period }: { period: Period }) {
+export function ReportView({ period, search }: { period: Period; search?: string }) {
   const currency = useSettingsStore((s) => s.currency);
   const { groups, totals, items } = useReportData(period);
-  const fullGroups = computeGroups(items, period);
-  const { visible, hasMore, loadMore } = useLocalPagination(items, 30);
+  const filteredItems = useMemo(() => {
+    if (!search?.trim()) return items;
+    const q = search.trim().toLowerCase();
+    return items.filter((t) => t.reason.toLowerCase().includes(q));
+  }, [items, search]);
+  const fullGroups = computeGroups(filteredItems, period);
+  const { visible, hasMore, loadMore } = useLocalPagination(filteredItems, 30);
   const visibleIds = new Set(visible.map((t) => t.id));
   const visibleGroups = fullGroups
     .map((g) => ({ ...g, items: g.items.filter((t) => visibleIds.has(t.id)) }))

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Screen, T } from '@/components/ui';
+import { Screen, T, TextField } from '@/components/ui';
 import { colors, spacing, layout } from '@/theme/tokens';
 import { ReportView } from '@/components/ReportView';
 import { syncNow } from '@/lib/sync';
@@ -10,6 +10,7 @@ import { syncNow } from '@/lib/sync';
 export default function TodayReport() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try { await syncNow(); } catch {}
@@ -34,7 +35,13 @@ export default function TodayReport() {
           <T variant="body" style={{ fontWeight: '700', color: colors.black }}>Add Expense</T>
         </Pressable>
       </View>
-      <ReportView period="today" />
+      <TextField
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search by reason..."
+      />
+      <View style={{ height: spacing.md }} />
+      <ReportView period="today" search={search} />
     </Screen>
   );
 }
