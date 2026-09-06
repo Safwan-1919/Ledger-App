@@ -10,7 +10,7 @@ import { useTransactionsStore } from '@/store/useTransactionsStore';
 import { useDeleteTransaction } from '@/hooks/useTransactions';
 import { syncNow } from '@/lib/sync';
 import { SkeletonCard, SkeletonList } from '@/components/Shimmer';
-import type { Transaction, TxType } from '@/types';
+import type { Transaction, TxType, PaymentMethod } from '@/types';
 
 export default function AccountsScreen() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function AccountsScreen() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TxType>('income');
   const [search, setSearch] = useState('');
+  const [payFilter, setPayFilter] = useState<PaymentMethod | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setInitialLoading(false), 600);
@@ -41,12 +42,15 @@ export default function AccountsScreen() {
 
   const filtered = useMemo(() => {
     let result = items.filter((t) => t.type === activeTab);
+    if (payFilter) {
+      result = result.filter((t) => t.paymentMethod === payFilter);
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((t) => t.reason.toLowerCase().includes(q));
     }
     return result.sort((a, b) => (a.date !== b.date ? b.date.localeCompare(a.date) : b.createdAt - a.createdAt));
-  }, [items, activeTab, search]);
+  }, [items, activeTab, search, payFilter]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -79,7 +83,7 @@ export default function AccountsScreen() {
 
   return (
     <Screen onRefresh={onRefresh} refreshing={refreshing}>
-      <BalanceCard activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setSearch(''); }} />
+      <BalanceCard activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setSearch(''); setPayFilter(null); }} />
       <View style={{ height: spacing.lg }} />
 
       <Pressable onPress={add} style={({ pressed }) => [addBtn, pressed && { opacity: 0.7 }]}>
@@ -99,6 +103,26 @@ export default function AccountsScreen() {
 
       <View style={{ height: spacing.md }} />
 
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        {([null, 'cash', 'online'] as const).map((pm) => {
+          const active = payFilter === pm;
+          const label = pm === null ? 'All' : pm === 'cash' ? 'Cash' : 'Online';
+          const icon = pm === null ? 'layers' : pm === 'cash' ? 'dollar-sign' : 'smartphone';
+          return (
+            <Pressable
+              key={label}
+              onPress={() => setPayFilter(pm)}
+              style={({ pressed }) => [payBtn, active && payBtnActive, pressed && { opacity: 0.7 }]}
+            >
+              <Feather name={icon} size={12} color={active ? colors.white : colors.black} />
+              <T variant="micro" style={{ color: active ? colors.white : colors.black, fontWeight: '700' }}>{label}</T>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={{ height: spacing.md }} />
+
       <TransactionList items={filtered} onDelete={confirmDelete} onPress={openEntry} />
     </Screen>
   );
@@ -114,4 +138,21 @@ const addBtn: ViewStyle = {
   borderColor: colors.black,
   paddingVertical: spacing.md,
   paddingHorizontal: spacing.lg,
+};
+
+const payBtn: ViewStyle = {
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.xs,
+  borderWidth: layout.borderWidth,
+  borderColor: colors.line,
+  paddingVertical: spacing.sm,
+  paddingHorizontal: spacing.sm,
+};
+
+const payBtnActive: ViewStyle = {
+  backgroundColor: colors.black,
+  borderColor: colors.black,
 };

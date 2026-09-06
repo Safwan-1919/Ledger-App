@@ -55,6 +55,11 @@ export function ReportView({ period }: { period: Period }) {
         <View style={{ height: spacing.sm }} />
         <Stat label="Net Balance" value={formatCurrency(totals.net, currency)} compact />
         <Divider margin={spacing.md} />
+        <Row style={{ gap: spacing.md }}>
+          <Stat label="Cash" value={formatCurrency(totals.cash, currency)} compact />
+          <Stat label="Online" value={formatCurrency(totals.online, currency)} compact />
+        </Row>
+        <Divider margin={spacing.md} />
         <Button
           label="Download PDF report"
           variant="outline"

@@ -18,9 +18,11 @@ export function useReportData(period: Period) {
         if (t.type === 'income') acc.income += t.amount;
         else acc.expense += t.amount;
         acc.count += 1;
+        if (t.paymentMethod === 'cash') acc.cash += t.amount;
+        else acc.online += t.amount;
         return acc;
       },
-      { income: 0, expense: 0, net: 0, count: 0 }
+      { income: 0, expense: 0, net: 0, count: 0, cash: 0, online: 0 }
     );
     totals.net = totals.income - totals.expense;
     return { groups, totals, items: inRange as Transaction[] };
