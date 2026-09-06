@@ -103,7 +103,7 @@ export default function TodayReport() {
 
       <View style={{ height: spacing.md }} />
 
-      <ReportView period="today" search={search} payFilter={payFilter} />
+      <ReportView period="today" search={search} payFilter={payFilter} cashOnly />
     </Screen>
   );
 }

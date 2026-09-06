@@ -15,7 +15,7 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { SkeletonCard, SkeletonList } from '@/components/Shimmer';
 import type { Period, Transaction } from '@/types';
 
-export function ReportView({ period, search, payFilter }: { period: Period; search?: string; payFilter?: string | null }) {
+export function ReportView({ period, search, payFilter, cashOnly }: { period: Period; search?: string; payFilter?: string | null; cashOnly?: boolean }) {
   const currency = useSettingsStore((s) => s.currency);
   const { groups, totals, items } = useReportData(period);
   const filteredItems = useMemo(() => {
@@ -80,18 +80,27 @@ export function ReportView({ period, search, payFilter }: { period: Period; sear
   return (
     <View style={{ gap: spacing.lg }}>
       <Card>
-        <Row style={{ gap: spacing.md }}>
-          <Stat label="Income" value={formatCurrency(displayTotals.income, currency)} accent="income" compact />
-          <Stat label="Expense" value={formatCurrency(displayTotals.expense, currency)} accent="expense" compact />
-        </Row>
-        <View style={{ height: spacing.sm }} />
-        <Stat label="Net Balance" value={formatCurrency(displayTotals.net, currency)} compact />
-        <Divider margin={spacing.sm} />
-        <Row style={{ gap: spacing.sm }}>
-          <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
-          <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
-        </Row>
-        <Divider margin={spacing.sm} />
+        {cashOnly ? (
+          <Row style={{ gap: spacing.sm }}>
+            <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
+            <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
+          </Row>
+        ) : (
+          <>
+            <Row style={{ gap: spacing.md }}>
+              <Stat label="Income" value={formatCurrency(displayTotals.income, currency)} accent="income" compact />
+              <Stat label="Expense" value={formatCurrency(displayTotals.expense, currency)} accent="expense" compact />
+            </Row>
+            <View style={{ height: spacing.sm }} />
+            <Stat label="Net Balance" value={formatCurrency(displayTotals.net, currency)} compact />
+            <Divider margin={spacing.sm} />
+            <Row style={{ gap: spacing.sm }}>
+              <Stat label="Cash" value={formatCurrency(displayTotals.incomeCash - displayTotals.expenseCash, currency)} compact />
+              <Stat label="Online" value={formatCurrency(displayTotals.incomeOnline - displayTotals.expenseOnline, currency)} compact />
+            </Row>
+            <Divider margin={spacing.sm} />
+          </>
+        )}
         <Button
           label="Download PDF report"
           variant="outline"
