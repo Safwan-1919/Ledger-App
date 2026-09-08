@@ -115,8 +115,8 @@ const statBox: ViewStyle = {
   borderColor: colors.line,
 };
 const statBoxActive: ViewStyle = {
-  backgroundColor: colors.black,
-  borderColor: colors.black,
+  backgroundColor: colors.red,
+  borderColor: colors.red,
 };
 const statLabelActive: TextStyle = { color: colors.white };
 const statValueActive: TextStyle = { color: colors.white };

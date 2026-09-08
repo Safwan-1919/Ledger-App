@@ -8,6 +8,7 @@ export const colors = {
   income: '#000000',
   expense: '#ffffff',
   danger: '#000000',
+  red: '#dc2626',
   overlay: 'rgba(0,0,0,0.4)',
 } as const;
 
