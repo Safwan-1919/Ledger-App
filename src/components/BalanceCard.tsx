@@ -30,7 +30,7 @@ export function BalanceCard({ activeTab, onTabChange }: { activeTab?: TxType; on
       <Row style={{ gap: spacing.md }}>
         <Pressable
           onPress={() => onTabChange?.('income')}
-          style={({ pressed }) => [statBox, incomeActive && statBoxActive, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [statBox, incomeActive && statBoxIncome, pressed && { opacity: 0.7 }]}
         >
           <T variant="micro" style={incomeActive ? statLabelActive : undefined}>Income</T>
           <T variant="h3" style={[{ fontWeight: '800' }, incomeActive ? statValueActive : { color: colors.muted }]}>
@@ -39,7 +39,7 @@ export function BalanceCard({ activeTab, onTabChange }: { activeTab?: TxType; on
         </Pressable>
         <Pressable
           onPress={() => onTabChange?.('expense')}
-          style={({ pressed }) => [statBox, expenseActive && statBoxActive, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [statBox, expenseActive && statBoxExpense, pressed && { opacity: 0.7 }]}
         >
           <T variant="micro" style={expenseActive ? statLabelActive : undefined}>Expense</T>
           <T variant="h3" style={[{ fontWeight: '800' }, expenseActive ? statValueActive : { color: colors.muted }]}>
@@ -57,7 +57,11 @@ const statBox: ViewStyle = {
   borderWidth: layout.borderWidth,
   borderColor: colors.line,
 };
-const statBoxActive: ViewStyle = {
+const statBoxIncome: ViewStyle = {
+  backgroundColor: colors.black,
+  borderColor: colors.black,
+};
+const statBoxExpense: ViewStyle = {
   backgroundColor: colors.red,
   borderColor: colors.red,
 };

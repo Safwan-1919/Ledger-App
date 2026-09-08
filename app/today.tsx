@@ -45,7 +45,7 @@ export default function TodayReport() {
         <Row style={{ gap: spacing.md }}>
           <Pressable
             onPress={() => setActiveTab('income')}
-            style={({ pressed }) => [statBox, activeTab === 'income' && statBoxActive, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [statBox, activeTab === 'income' && statBoxIncome, pressed && { opacity: 0.7 }]}
           >
             <T variant="micro" style={activeTab === 'income' ? statLabelActive : undefined}>Income</T>
             <T variant="h3" style={[{ fontWeight: '800' }, activeTab === 'income' ? statValueActive : { color: colors.muted }]}>
@@ -54,7 +54,7 @@ export default function TodayReport() {
           </Pressable>
           <Pressable
             onPress={() => setActiveTab('expense')}
-            style={({ pressed }) => [statBox, activeTab === 'expense' && statBoxActive, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [statBox, activeTab === 'expense' && statBoxExpense, pressed && { opacity: 0.7 }]}
           >
             <T variant="micro" style={activeTab === 'expense' ? statLabelActive : undefined}>Expense</T>
             <T variant="h3" style={[{ fontWeight: '800' }, activeTab === 'expense' ? statValueActive : { color: colors.muted }]}>
@@ -114,7 +114,11 @@ const statBox: ViewStyle = {
   borderWidth: layout.borderWidth,
   borderColor: colors.line,
 };
-const statBoxActive: ViewStyle = {
+const statBoxIncome: ViewStyle = {
+  backgroundColor: colors.black,
+  borderColor: colors.black,
+};
+const statBoxExpense: ViewStyle = {
   backgroundColor: colors.red,
   borderColor: colors.red,
 };
